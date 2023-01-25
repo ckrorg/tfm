@@ -1,0 +1,50 @@
+name: tfc-vault
+
+on:
+  push:
+    branches: [ master ] 
+
+
+jobs:
+    build:
+         runs-on: ubuntu-latest 
+         steps:
+            - name: VAULT COMMAND
+              run: |
+                  curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+                  sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+                  sudo apt install vault
+                  sudo systemctl start vault.service
+                  sudo systemctl status vault.service
+                  export VAULT_ADDR=https://vault-cluster-public-vault-576b5917.b038600b.z1.hashicorp.cloud:8200/
+                  export VAULT_TOKEN=hvs.CAESIGXkbE0hZJK53S4AADgG82ZTtByDRJbsOOhUUIpBaxEwGicKImh2cy5pY1VUbDhZeTlmd1A2UWs1c0tFa05OaG4uVHFIZWkQ-Hw
+                 
+                  vault version
+                  vault login hvs.CAESIGXkbE0hZJK53S4AADgG82ZTtByDRJbsOOhUUIpBaxEwGicKImh2cy5pY1VUbDhZeTlmd1A2UWs1c0tFa05OaG4uVHFIZWkQ-Hw
+                  export VAULT_NAMESPACE=admin
+                  echo "vault login success"
+                  #vault namespace create education
+
+                 
+                  echo "path "sys/namespaces/*" {capabilities = ["create", "read", "update", "delete", "list", "sudo"]}" > edu-admin.hcl
+                  echo "path "sys/policies/acl/*" {capabilities = ["create", "read", "update", "delete", "list", "sudo"]}" >> edu-admin.hcl
+                  echo "path "sys/mounts/*" {capabilities = ["create", "read", "update", "delete", "list"]}" >> edu-admin.hcl
+                  echo "path "sys/mounts" {capabilities = [ "read" ]}" >> edu-admin.hcl
+                  echo "path "identity/*" {capabilities = ["create", "read", "update", "delete", "list"]}" >> edu-admin.hcl
+                  echo "path "auth/token/*" {capabilities = ["create", "read", "update", "delete", "list", "sudo"]}" >> edu-admin.hcl
+                  echo "path "edu-secret/*" {capabilities = ["create", "read", "update", "delete", "list"]}" >> edu-admin.hcl
+                  export VAULT_NAMESPACE=admin/education
+                  vault policy write -namespace=education edu-admin edu-admin.hcl
+                  export VAULT_NAMESPACE=admin/education
+                  echo "success"
+                  
+                  #vault write cubbyhole/jfrog-cred username=renuka.prasad@cloudzenix.com password=Prasad@123 URL=https://cloudzenix.jfrog.io/
+                  #vault read cubbyhole/myval
+                  
+                  echo "print vault secrets"
+                  
+                  mytoken=$(vault read cubbyhole/jfrog-cred | grep username | awk '{ print $2; }')
+                  echo "$mytoken"
+                  
+                  myvalue=$(vault read cubbyhole/jfrog-cred | grep password | awk '{ print $2; }')
+                  echo "$myvalue"
